@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum ResourceType {
+  BIBLE
+  COMMENTARY
+  DICTIONARY
+  ATLAS
+  OTHER
+}
+
+model BibleVersion {
+  id        String  @id @default(uuid())
+  name      String  @unique
+  abbr      String  @unique
+  language  String  @default("es")
+  year      Int?
+  publisher String?
+  isActive  Boolean @default(true)
+  books     Book[]
+}
+
+model Book {
+  id             String        @id @default(uuid())
+  bibleVersionId String
+  bibleVersion   BibleVersion  @relation(fields: [bibleVersionId], references: [id])
+  number         Int
+  name           String
+  abbreviation   String
+  testament      String        @default("VT")
+  chapters       Chapter[]
+}
+
+model Chapter {
+  id      String  @id @default(uuid())
+  bookId  String
+  book    Book    @relation(fields: [bookId], references: [id])
+  number  Int
+  verses  Verse[]
+}
+
+model Verse {
+  id        String  @id @default(uuid())
+  chapterId String
+  chapter   Chapter @relation(fields: [chapterId], references: [id])
+  number    Int
+  text      String
+
+  userNotes    UserNote[]
+  highlights   Highlight[]
+  favorites    Favorite[]
+}
+
+model Commentary {
+  id        String @id @default(uuid())
+  name      String @unique
+  author    String
+  year      Int?
+  isActive  Boolean @default(true)
+  entries   CommentaryEntry[]
+}
+
+model CommentaryEntry {
+  id           String     @id @default(uuid())
+  commentaryId String
+  commentary   Commentary @relation(fields: [commentaryId], references: [id])
+  bookName     String
+  chapter      Int
+  verseStart   Int?
+  verseEnd     Int?
+  title        String?
+  content      String
+}
+
+model Dictionary {
+  id        String @id @default(uuid())
+  name      String @unique
+  author    String
+  year      Int?
+  isActive  Boolean @default(true)
+  entries   DictionaryEntry[]
+}
+
+model DictionaryEntry {
+  id           String     @id @default(uuid())
+  dictionaryId String
+  dictionary   Dictionary @relation(fields: [dictionaryId], references: [id])
+  word         String
+  transliteration String?
+  definition   String
+  strongNumber String?
+  content      String
+}
+
+model StrongReference {
+  id          String  @id @default(uuid())
+  number      String  @unique
+  original    String
+  transliteration String?
+  word        String
+  definition  String
+  language    String  @default("greek")
+  morphology  String?
+  occurrences Int?
+}
+
+model UserNote {
+  id        String   @id @default(uuid())
+  verseId   String
+  verse     Verse    @relation(fields: [verseId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Highlight {
+  id        String   @id @default(uuid())
+  verseId   String
+  verse     Verse    @relation(fields: [verseId], references: [id])
+  color     String   @default("yellow")
+  createdAt DateTime @default(now())
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  verseId   String?
+  verse     Verse?   @relation(fields: [verseId], references: [id])
+  label     String?
+  type      String   @default("verse")
+  createdAt DateTime @default(now())
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  title     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  role           String
+  content        String
+  sources        String?
+  createdAt      DateTime     @default(now())
+}
+
+model Resource {
+  id        String @id @default(uuid())
+  type      ResourceType @default(OTHER)
+  name      String
+  url       String?
+  data      String?
+}
+
+model Embedding {
+  id           String   @id @default(uuid())
+  resourceType String
+  resourceId   String
+  content      String
+  vector       String?
+  createdAt    DateTime @default(now())
+}
